@@ -404,45 +404,24 @@
         </div>
 
         <div class="steps-container">
-            <div class="step" id="step1">
+            <div class="step completed" id="step1">
                 <div class="step-number">PASO 1</div>
                 <div class="step-icon">📱</div>
                 <div class="step-title">WhatsApp</div>
-                <div class="step-status" id="step1-status">Completa este paso</div>
+                <div class="step-status" id="step1-status">✅ Completado</div>
             </div>
             <div class="divider">→</div>
-            <div class="step locked" id="step2">
+            <div class="step completed" id="step2">
                 <div class="step-number">PASO 2</div>
                 <div class="step-icon">🎬</div>
                 <div class="step-title">YouTube</div>
-                <div class="step-status" id="step2-status">🔒 Bloqueado</div>
+                <div class="step-status" id="step2-status">✅ Completado</div>
             </div>
         </div>
 
         <div class="content-box">
-            <div id="step1-content">
-                <div class="info-text">📌 Sigue nuestro canal de WhatsApp para desbloquear el Paso 2</div>
-                <a href="https://whatsapp.com/channel/0029VbBT63UGOj9oDI0IVZ1s" target="_blank">
-                    <button class="button button-primary" id="whatsapp-btn">
-                        ✅ Seguir Canal WhatsApp
-                    </button>
-                </a>
-            </div>
-
-            <div id="step2-content" style="display: none;">
-                <div class="warning-text">
-                    ✅ ¡Paso 1 completado! Ahora sigue nuestro canal de YouTube
-                </div>
-                <div class="info-text">📌 Sigue nuestro canal de YouTube para generar tus keys</div>
-                <a href="https://www.youtube.com/@CrissModz" target="_blank">
-                    <button class="button button-primary" id="youtube-btn">
-                        🎬 Seguir Canal YouTube
-                    </button>
-                </a>
-            </div>
-
-            <div id="step3-content" style="display: none;">
-                <div class="success-message" id="success-msg">
+            <div id="step3-content">
+                <div class="success-message" id="success-msg" style="display: block;">
                     🎉 ¡Todos los pasos completados! Genera tus keys ahora
                 </div>
 
@@ -472,82 +451,6 @@
     </div>
 
     <script>
-        let step1Completed = false;
-        let step2Completed = false;
-
-        function loadState() {
-            const saved = localStorage.getItem('keyGeneratorState');
-            if (saved) {
-                const state = JSON.parse(saved);
-                step1Completed = state.step1;
-                step2Completed = state.step2;
-                updateUI();
-            }
-        }
-
-        function saveState() {
-            localStorage.setItem('keyGeneratorState', JSON.stringify({
-                step1: step1Completed,
-                step2: step2Completed
-            }));
-        }
-
-        function updateUI() {
-            if (step1Completed) {
-                document.getElementById('step1').classList.add('completed');
-                document.getElementById('step1-status').textContent = '✅ Completado';
-                document.getElementById('step1-content').style.display = 'none';
-                document.getElementById('step2-content').style.display = 'block';
-                document.getElementById('step2').classList.remove('locked');
-            }
-
-            if (step2Completed) {
-                document.getElementById('step2').classList.add('completed');
-                document.getElementById('step2-status').textContent = '✅ Completado';
-                document.getElementById('step2-content').style.display = 'none';
-                document.getElementById('step3-content').style.display = 'block';
-                document.getElementById('success-msg').classList.add('show');
-            }
-        }
-
-        function resetSteps() {
-            step1Completed = false;
-            step2Completed = false;
-            saveState();
-
-            // Reset UI
-            document.getElementById('step1').classList.remove('completed');
-            document.getElementById('step1-status').textContent = 'Completa este paso';
-            document.getElementById('step2').classList.add('locked');
-            document.getElementById('step2-status').textContent = '🔒 Bloqueado';
-
-            // Reset content
-            document.getElementById('step1-content').style.display = 'block';
-            document.getElementById('step2-content').style.display = 'none';
-            document.getElementById('step3-content').style.display = 'none';
-
-            // Reset keys output
-            document.getElementById('loading-container').classList.remove('show');
-            document.getElementById('keys-output').style.display = 'none';
-            document.getElementById('generate-btn').style.display = 'block';
-        }
-
-        document.getElementById('whatsapp-btn').addEventListener('click', function() {
-            setTimeout(() => {
-                step1Completed = true;
-                saveState();
-                updateUI();
-            }, 1000);
-        });
-
-        document.getElementById('youtube-btn').addEventListener('click', function() {
-            setTimeout(() => {
-                step2Completed = true;
-                saveState();
-                updateUI();
-            }, 1000);
-        });
-
         document.getElementById('generate-btn').addEventListener('click', function() {
             this.style.display = 'none';
             document.getElementById('loading-container').classList.add('show');
@@ -640,10 +543,9 @@
         });
 
         document.getElementById('reset-btn').addEventListener('click', function() {
-            resetSteps();
+            document.getElementById('generate-btn').style.display = 'block';
+            document.getElementById('keys-output').style.display = 'none';
         });
-
-        loadState();
     </script>
 </body>
 </html>
