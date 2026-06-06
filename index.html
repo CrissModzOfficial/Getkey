@@ -72,7 +72,7 @@
             overflow: hidden;
         }
 
-        .step:hover {
+        .step:hover:not(.locked) {
             border-color: #1e90ff;
             background: rgba(30, 144, 255, 0.1);
             transform: translateY(-5px);
@@ -377,6 +377,17 @@
             opacity: 0.8;
         }
 
+        .locked-message {
+            color: #ff6666;
+            font-size: 0.9em;
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 100, 100, 0.1);
+            border-left: 3px solid #ff6666;
+            border-radius: 5px;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -404,23 +415,40 @@
         </div>
 
         <div class="steps-container">
-            <div class="step completed" id="step1">
+            <div class="step" id="step1">
                 <div class="step-number">PASO 1</div>
                 <div class="step-icon">📱</div>
                 <div class="step-title">WhatsApp</div>
-                <div class="step-status" id="step1-status">✅ Completado</div>
+                <div class="step-status" id="step1-status">Completa este paso</div>
             </div>
             <div class="divider">→</div>
-            <div class="step completed" id="step2">
+            <div class="step locked" id="step2">
                 <div class="step-number">PASO 2</div>
                 <div class="step-icon">🎬</div>
                 <div class="step-title">YouTube</div>
-                <div class="step-status" id="step2-status">✅ Completado</div>
+                <div class="step-status" id="step2-status">🔒 Bloqueado</div>
             </div>
         </div>
 
         <div class="content-box">
-            <div id="step3-content">
+            <div id="step1-content">
+                <div class="info-text">📌 Completa el Paso 1 para desbloquear el Paso 2</div>
+                <button class="button button-primary" id="complete-step1-btn">
+                    ✅ Completar Paso 1
+                </button>
+            </div>
+
+            <div id="step2-content" style="display: none;">
+                <div class="warning-text">
+                    ✅ ¡Paso 1 completado! Ahora completa el Paso 2
+                </div>
+                <div class="info-text">📌 Completa este paso para generar tus keys</div>
+                <button class="button button-primary" id="complete-step2-btn">
+                    ✅ Completar Paso 2
+                </button>
+            </div>
+
+            <div id="step3-content" style="display: none;">
                 <div class="success-message" id="success-msg" style="display: block;">
                     🎉 ¡Todos los pasos completados! Genera tus keys ahora
                 </div>
@@ -451,6 +479,84 @@
     </div>
 
     <script>
+        let step1Completed = false;
+        let step2Completed = false;
+
+        function loadState() {
+            const saved = localStorage.getItem('keyGeneratorState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                step1Completed = state.step1;
+                step2Completed = state.step2;
+                updateUI();
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('keyGeneratorState', JSON.stringify({
+                step1: step1Completed,
+                step2: step2Completed
+            }));
+        }
+
+        function updateUI() {
+            if (step1Completed) {
+                document.getElementById('step1').classList.add('completed');
+                document.getElementById('step1-status').textContent = '✅ Completado';
+                document.getElementById('step1-content').style.display = 'none';
+                document.getElementById('step2-content').style.display = 'block';
+                document.getElementById('step2').classList.remove('locked');
+            }
+
+            if (step2Completed) {
+                document.getElementById('step2').classList.add('completed');
+                document.getElementById('step2-status').textContent = '✅ Completado';
+                document.getElementById('step2-content').style.display = 'none';
+                document.getElementById('step3-content').style.display = 'block';
+                document.getElementById('success-msg').classList.add('show');
+            }
+        }
+
+        function resetSteps() {
+            step1Completed = false;
+            step2Completed = false;
+            saveState();
+
+            // Reset UI
+            document.getElementById('step1').classList.remove('completed');
+            document.getElementById('step1-status').textContent = 'Completa este paso';
+            document.getElementById('step2').classList.add('locked');
+            document.getElementById('step2-status').textContent = '🔒 Bloqueado';
+
+            // Reset content
+            document.getElementById('step1-content').style.display = 'block';
+            document.getElementById('step2-content').style.display = 'none';
+            document.getElementById('step3-content').style.display = 'none';
+
+            // Reset keys output
+            document.getElementById('loading-container').classList.remove('show');
+            document.getElementById('keys-output').style.display = 'none';
+            document.getElementById('generate-btn').style.display = 'block';
+        }
+
+        document.getElementById('complete-step1-btn').addEventListener('click', function() {
+            step1Completed = true;
+            saveState();
+            updateUI();
+        });
+
+        document.getElementById('complete-step2-btn').addEventListener('click', function() {
+            step2Completed = true;
+            saveState();
+            updateUI();
+        });
+
+        document.getElementById('step2').addEventListener('click', function() {
+            if (this.classList.contains('locked')) {
+                alert('❌ Debes completar el Paso 1 primero');
+            }
+        });
+
         document.getElementById('generate-btn').addEventListener('click', function() {
             this.style.display = 'none';
             document.getElementById('loading-container').classList.add('show');
@@ -543,9 +649,10 @@
         });
 
         document.getElementById('reset-btn').addEventListener('click', function() {
-            document.getElementById('generate-btn').style.display = 'block';
-            document.getElementById('keys-output').style.display = 'none';
+            resetSteps();
         });
+
+        loadState();
     </script>
 </body>
 </html>
