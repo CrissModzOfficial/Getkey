@@ -287,6 +287,60 @@
             margin-bottom: 20px;
         }
 
+        .cooldown-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .cooldown-overlay.show {
+            display: flex;
+        }
+
+        .cooldown-box {
+            text-align: center;
+            background: rgba(10, 30, 60, 0.95);
+            border: 2px solid rgba(30, 144, 255, 0.6);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+        }
+
+        .cooldown-title {
+            font-size: 1.8em;
+            color: #ff6666;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .cooldown-text {
+            color: #1e90ff;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .cooldown-timer {
+            font-size: 4em;
+            color: #ff6666;
+            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .cooldown-subtitle {
+            color: #00bfff;
+            font-size: 1em;
+            margin-top: 20px;
+        }
+
         .reset-button {
             background: linear-gradient(45deg, #ff4444, #ff8888);
             color: white;
@@ -362,6 +416,10 @@
             .steps-container {
                 flex-direction: column;
             }
+
+            .cooldown-timer {
+                font-size: 3em;
+            }
         }
 
         .divider {
@@ -400,6 +458,15 @@
     </style>
 </head>
 <body>
+    <div class="cooldown-overlay" id="cooldown-overlay">
+        <div class="cooldown-box">
+            <div class="cooldown-title">⏳ ESPERA ANTES DE GENERAR OTRA KEY</div>
+            <div class="cooldown-text">Debes esperar 2 minutos antes de volver a generar</div>
+            <div class="cooldown-timer" id="cooldown-timer">2:00</div>
+            <div class="cooldown-subtitle">Después vuelve al Paso 1 para continuar</div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1 class="title">GENERADOR DE KEY FAKE MODZ ⚡</h1>
@@ -434,7 +501,7 @@
                 <div class="warning-text">
                     ✅ ¡Paso 1 completado! Ahora completa el Paso 2
                 </div>
-                <div class="info-text">📌 Completa este paso para generar tus keys</div>
+                <div class="info-text">📌 Completa este paso para generar tu key</div>
                 <button class="button button-primary" id="complete-step2-btn">
                     ✅ Completar Paso 2
                 </button>
@@ -466,9 +533,6 @@
                     <div class="exhausted-message" id="exhausted-msg">
                         ✅ ¡Ya has obtenido todas las keys disponibles!
                     </div>
-                    <button class="button reset-button" id="reset-btn" style="display: none;">
-                        🔄 Generar Otra Key
-                    </button>
                 </div>
             </div>
         </div>
@@ -477,6 +541,7 @@
     <script>
         let step1Completed = false;
         let step2Completed = false;
+        let inCooldown = false;
 
         // Keys específicas a mostrar
         const predefinedKeys = [
@@ -503,6 +568,28 @@
                 step1Completed = state.step1;
                 step2Completed = state.step2;
                 usedKeys = state.usedKeys || [];
+                const cooldownTime = state.cooldownTime;
+                
+                if (cooldownTime) {
+                    const now = Date.now();
+                    const timeLeft = cooldownTime - now;
+                    
+                    if (timeLeft > 0) {
+                        inCooldown = true;
+                        startCooldown(timeLeft);
+                    } else {
+                        // Cooldown ya terminó, resetear pasos
+                        step1Completed = false;
+                        step2Completed = false;
+                        localStorage.removeItem('keyGeneratorState');
+                        localStorage.setItem('keyGeneratorState', JSON.stringify({
+                            step1: false,
+                            step2: false,
+                            usedKeys: usedKeys
+                        }));
+                    }
+                }
+                
                 updateUI();
             }
         }
@@ -511,7 +598,18 @@
             localStorage.setItem('keyGeneratorState', JSON.stringify({
                 step1: step1Completed,
                 step2: step2Completed,
-                usedKeys: usedKeys
+                usedKeys: usedKeys,
+                cooldownTime: null
+            }));
+        }
+
+        function saveCooldown() {
+            const cooldownEndTime = Date.now() + (2 * 60 * 1000); // 2 minutos
+            localStorage.setItem('keyGeneratorState', JSON.stringify({
+                step1: false,
+                step2: false,
+                usedKeys: usedKeys,
+                cooldownTime: cooldownEndTime
             }));
         }
 
@@ -536,8 +634,6 @@
         function resetSteps() {
             step1Completed = false;
             step2Completed = false;
-            usedKeys = [];
-            currentKey = null;
             saveState();
 
             // Reset UI
@@ -613,7 +709,6 @@
             if (key === null) {
                 // No hay más keys disponibles
                 document.getElementById('key-output').style.display = 'block';
-                document.getElementById('reset-btn').style.display = 'none';
                 document.getElementById('exhausted-msg').style.display = 'block';
                 document.getElementById('remaining-text').style.display = 'none';
                 document.getElementById('key-display').style.display = 'none';
@@ -631,12 +726,37 @@
                 if (remaining > 0) {
                     document.getElementById('remaining-text').textContent = `📊 Keys disponibles: ${remaining}/${predefinedKeys.length}`;
                     document.getElementById('remaining-text').style.display = 'block';
-                    document.getElementById('reset-btn').style.display = 'block';
                 } else {
                     document.getElementById('remaining-text').style.display = 'none';
-                    document.getElementById('reset-btn').style.display = 'none';
                 }
+
+                // Iniciar cooldown de 2 minutos
+                saveCooldown();
+                inCooldown = true;
+                startCooldown(2 * 60 * 1000);
             }
+        }
+
+        function startCooldown(duration) {
+            const overlay = document.getElementById('cooldown-overlay');
+            overlay.classList.add('show');
+            
+            let timeLeft = Math.ceil(duration / 1000);
+            const cooldownTimerElement = document.getElementById('cooldown-timer');
+
+            const interval = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                cooldownTimerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                timeLeft--;
+
+                if (timeLeft < 0) {
+                    clearInterval(interval);
+                    overlay.classList.remove('show');
+                    inCooldown = false;
+                    resetSteps();
+                }
+            }, 1000);
         }
 
         function copyCurrentKey() {
@@ -655,15 +775,6 @@
                 });
             }
         }
-
-        document.getElementById('reset-btn').addEventListener('click', function() {
-            const key = getRandomKey();
-            if (key !== null) {
-                document.getElementById('generate-btn').style.display = 'none';
-                document.getElementById('loading-container').classList.add('show');
-                startCountdown();
-            }
-        });
 
         loadState();
     </script>
