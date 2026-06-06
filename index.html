@@ -482,6 +482,21 @@
         let step1Completed = false;
         let step2Completed = false;
 
+        // Keys específicas a mostrar
+        const predefinedKeys = [
+            'FAKE-MODZ-82841KDA',
+            'FAKE-MODZ-FGYZY889',
+            'FAKE-MODZ-FGYZY88W',
+            'FAKE-MODZ-FR973H0M',
+            'FAKE-MODZ-GHT198FAM',
+            'FAKE-MODZ-HWA987AS',
+            'FAKE-MODZ-K1DFTA7S',
+            'FAKE-MODZ-KLA49G19',
+            'FAKE-MODZ-LD991A',
+            'FAKE-MODZ-LT23GT',
+            'FAKE-MODZ-LT23GTGX'
+        ];
+
         function loadState() {
             const saved = localStorage.getItem('keyGeneratorState');
             if (saved) {
@@ -575,28 +590,9 @@
                 if (timeLeft < 0) {
                     clearInterval(interval);
                     loadingContainer.classList.remove('show');
-                    const keys = generateRandomKeys(8);
-                    displayKeys(keys);
+                    displayKeys(predefinedKeys);
                 }
             }, 1000);
-        }
-
-        function generateRandomKeys(quantity) {
-            const keys = [];
-            for (let i = 0; i < quantity; i++) {
-                const key = 'FAKE-MODZ-' + generateRandomString(8).toUpperCase();
-                keys.push(key);
-            }
-            return keys;
-        }
-
-        function generateRandomString(length) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
         }
 
         function displayKeys(keys) {
@@ -649,7 +645,8 @@
         });
 
         document.getElementById('reset-btn').addEventListener('click', function() {
-            resetSteps();
+            document.getElementById('generate-btn').style.display = 'block';
+            document.getElementById('keys-output').style.display = 'none';
         });
 
         loadState();
