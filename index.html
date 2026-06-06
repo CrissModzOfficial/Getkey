@@ -227,19 +227,10 @@
             border-color: #00ff88;
         }
 
-        .keys-list {
-            max-height: 400px;
-            overflow-y: auto;
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-        }
-
-        .key-item {
+        .single-key-display {
             background: rgba(30, 144, 255, 0.1);
-            padding: 12px;
-            margin: 8px 0;
+            padding: 20px;
+            margin: 15px 0;
             border-left: 3px solid #1e90ff;
             border-radius: 5px;
             display: flex;
@@ -247,9 +238,10 @@
             align-items: center;
             color: #00ff88;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            font-size: 1em;
             animation: slideIn 0.3s ease-out;
             font-weight: bold;
+            word-break: break-all;
         }
 
         .download-button {
@@ -302,6 +294,17 @@
 
         .reset-button:hover:not(:disabled) {
             box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+        }
+
+        .exhausted-message {
+            display: none;
+            color: #ff6666;
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 100, 100, 0.1);
+            border-left: 3px solid #ff6666;
+            border-radius: 5px;
         }
 
         @keyframes spin {
@@ -377,17 +380,6 @@
             opacity: 0.8;
         }
 
-        .locked-message {
-            color: #ff6666;
-            font-size: 0.9em;
-            text-align: center;
-            margin: 15px 0;
-            padding: 15px;
-            background: rgba(255, 100, 100, 0.1);
-            border-left: 3px solid #ff6666;
-            border-radius: 5px;
-        }
-
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -450,28 +442,32 @@
 
             <div id="step3-content" style="display: none;">
                 <div class="success-message" id="success-msg" style="display: block;">
-                    🎉 ¡Todos los pasos completados! Genera tus keys ahora
+                    🎉 ¡Todos los pasos completados! Genera tu key ahora
                 </div>
 
                 <button class="button button-success" id="generate-btn">
-                    ⚡ GENERAR KEYS
+                    ⚡ GENERAR KEY
                 </button>
 
                 <div id="loading-container" class="loading-container">
-                    <div class="timer-text">⏳ Generando tus keys...</div>
+                    <div class="timer-text">⏳ Generando tu key...</div>
                     <div class="spinner"></div>
                     <div class="timer" id="timer">60</div>
                     <p style="color: #1e90ff; font-size: 0.95em;">Espera mientras procesamos tu solicitud</p>
                 </div>
 
-                <div id="keys-output" style="display: none;">
-                    <div class="info-text" style="color: #00ff88;">🔑 Tus Keys Generadas:</div>
-                    <div class="keys-list" id="keys-list"></div>
-                    <button class="button download-button" id="download-btn">
-                        📥 Descargar Keys (TXT)
-                    </button>
-                    <button class="button reset-button" id="reset-btn">
-                        🔄 Generar Más Keys
+                <div id="key-output" style="display: none;">
+                    <div class="info-text" style="color: #00ff88;">🔑 Tu Key Generada:</div>
+                    <div class="single-key-display" id="key-display">
+                        <span id="key-text"></span>
+                        <button class="copy-button" onclick="copyCurrentKey()">📋 Copiar</button>
+                    </div>
+                    <div class="info-text" id="remaining-text" style="color: #ffaa00;"></div>
+                    <div class="exhausted-message" id="exhausted-msg">
+                        ✅ ¡Ya has obtenido todas las keys disponibles!
+                    </div>
+                    <button class="button reset-button" id="reset-btn" style="display: none;">
+                        🔄 Generar Otra Key
                     </button>
                 </div>
             </div>
@@ -497,12 +493,16 @@
             'FAKE-MODZ-LT23GTGX'
         ];
 
+        let usedKeys = [];
+        let currentKey = null;
+
         function loadState() {
             const saved = localStorage.getItem('keyGeneratorState');
             if (saved) {
                 const state = JSON.parse(saved);
                 step1Completed = state.step1;
                 step2Completed = state.step2;
+                usedKeys = state.usedKeys || [];
                 updateUI();
             }
         }
@@ -510,7 +510,8 @@
         function saveState() {
             localStorage.setItem('keyGeneratorState', JSON.stringify({
                 step1: step1Completed,
-                step2: step2Completed
+                step2: step2Completed,
+                usedKeys: usedKeys
             }));
         }
 
@@ -535,6 +536,8 @@
         function resetSteps() {
             step1Completed = false;
             step2Completed = false;
+            usedKeys = [];
+            currentKey = null;
             saveState();
 
             // Reset UI
@@ -548,10 +551,19 @@
             document.getElementById('step2-content').style.display = 'none';
             document.getElementById('step3-content').style.display = 'none';
 
-            // Reset keys output
+            // Reset key output
             document.getElementById('loading-container').classList.remove('show');
-            document.getElementById('keys-output').style.display = 'none';
+            document.getElementById('key-output').style.display = 'none';
             document.getElementById('generate-btn').style.display = 'block';
+        }
+
+        function getRandomKey() {
+            const availableKeys = predefinedKeys.filter(key => !usedKeys.includes(key));
+            if (availableKeys.length === 0) {
+                return null;
+            }
+            const randomIndex = Math.floor(Math.random() * availableKeys.length);
+            return availableKeys[randomIndex];
         }
 
         document.getElementById('complete-step1-btn').addEventListener('click', function() {
@@ -590,63 +602,67 @@
                 if (timeLeft < 0) {
                     clearInterval(interval);
                     loadingContainer.classList.remove('show');
-                    displayKeys(predefinedKeys);
+                    displayKey();
                 }
             }, 1000);
         }
 
-        function displayKeys(keys) {
-            const keysList = document.getElementById('keys-list');
-            keysList.innerHTML = '';
-            keys.forEach((key, index) => {
-                const keyItem = document.createElement('div');
-                keyItem.className = 'key-item';
-                keyItem.innerHTML = `
-                    <span>${index + 1}. ${key}</span>
-                    <button class="copy-button" onclick="copyKey('${key}', this)">📋 Copiar</button>
-                `;
-                keysList.appendChild(keyItem);
-            });
+        function displayKey() {
+            const key = getRandomKey();
+            
+            if (key === null) {
+                // No hay más keys disponibles
+                document.getElementById('key-output').style.display = 'block';
+                document.getElementById('reset-btn').style.display = 'none';
+                document.getElementById('exhausted-msg').style.display = 'block';
+                document.getElementById('remaining-text').style.display = 'none';
+                document.getElementById('key-display').style.display = 'none';
+            } else {
+                currentKey = key;
+                usedKeys.push(key);
+                saveState();
 
-            document.getElementById('keys-output').style.display = 'block';
-            window.currentKeys = keys;
-        }
+                document.getElementById('key-text').textContent = key;
+                document.getElementById('key-output').style.display = 'block';
+                document.getElementById('exhausted-msg').style.display = 'none';
+                document.getElementById('key-display').style.display = 'flex';
 
-        function copyKey(key, button) {
-            navigator.clipboard.writeText(key).then(() => {
-                const originalText = button.textContent;
-                button.textContent = '✅ Copiada';
-                button.classList.add('copied');
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.classList.remove('copied');
-                }, 2000);
-            });
-        }
-
-        document.getElementById('download-btn').addEventListener('click', function() {
-            if (window.currentKeys && window.currentKeys.length > 0) {
-                const content = 'GENERADOR DE KEY FAKE MODZ ⚡\n';
-                const content2 = 'Fecha: ' + new Date().toLocaleString() + '\n';
-                const content3 = '================================\n\n';
-                const keysContent = window.currentKeys.join('\n');
-                const fullContent = content + content2 + content3 + keysContent;
-
-                const blob = new Blob([fullContent], { type: 'text/plain' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'FAKE-MODZ-KEYS-' + Date.now() + '.txt';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                const remaining = predefinedKeys.length - usedKeys.length;
+                if (remaining > 0) {
+                    document.getElementById('remaining-text').textContent = `📊 Keys disponibles: ${remaining}/${predefinedKeys.length}`;
+                    document.getElementById('remaining-text').style.display = 'block';
+                    document.getElementById('reset-btn').style.display = 'block';
+                } else {
+                    document.getElementById('remaining-text').style.display = 'none';
+                    document.getElementById('reset-btn').style.display = 'none';
+                }
             }
-        });
+        }
+
+        function copyCurrentKey() {
+            if (currentKey) {
+                navigator.clipboard.writeText(currentKey).then(() => {
+                    const buttons = document.querySelectorAll('.copy-button');
+                    buttons.forEach(btn => {
+                        const originalText = btn.textContent;
+                        btn.textContent = '✅ Copiada';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+            }
+        }
 
         document.getElementById('reset-btn').addEventListener('click', function() {
-            document.getElementById('generate-btn').style.display = 'block';
-            document.getElementById('keys-output').style.display = 'none';
+            const key = getRandomKey();
+            if (key !== null) {
+                document.getElementById('generate-btn').style.display = 'none';
+                document.getElementById('loading-container').classList.add('show');
+                startCountdown();
+            }
         });
 
         loadState();
