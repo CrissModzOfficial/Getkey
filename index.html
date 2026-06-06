@@ -295,6 +295,15 @@
             margin-bottom: 20px;
         }
 
+        .reset-button {
+            background: linear-gradient(45deg, #ff4444, #ff8888);
+            color: white;
+        }
+
+        .reset-button:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -454,6 +463,9 @@
                     <button class="button download-button" id="download-btn">
                         📥 Descargar Keys (TXT)
                     </button>
+                    <button class="button reset-button" id="reset-btn">
+                        🔄 Generar Más Keys
+                    </button>
                 </div>
             </div>
         </div>
@@ -496,6 +508,28 @@
                 document.getElementById('step3-content').style.display = 'block';
                 document.getElementById('success-msg').classList.add('show');
             }
+        }
+
+        function resetSteps() {
+            step1Completed = false;
+            step2Completed = false;
+            saveState();
+
+            // Reset UI
+            document.getElementById('step1').classList.remove('completed');
+            document.getElementById('step1-status').textContent = 'Completa este paso';
+            document.getElementById('step2').classList.add('locked');
+            document.getElementById('step2-status').textContent = '🔒 Bloqueado';
+
+            // Reset content
+            document.getElementById('step1-content').style.display = 'block';
+            document.getElementById('step2-content').style.display = 'none';
+            document.getElementById('step3-content').style.display = 'none';
+
+            // Reset keys output
+            document.getElementById('loading-container').classList.remove('show');
+            document.getElementById('keys-output').style.display = 'none';
+            document.getElementById('generate-btn').style.display = 'block';
         }
 
         document.getElementById('whatsapp-btn').addEventListener('click', function() {
@@ -603,6 +637,10 @@
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
             }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            resetSteps();
         });
 
         loadState();
