@@ -418,12 +418,6 @@
                         ✅ Seguir Canal WhatsApp
                     </button>
                 </a>
-                <div style="text-align: center; margin-top: 15px; color: #1e90ff;">
-                    <small>Después de seguir, haz clic en "Verificar"</small>
-                </div>
-                <button class="button button-primary" id="verify-whatsapp-btn" style="background: linear-gradient(45deg, #00cc66, #00ff88);">
-                    ✓ Verificar Paso 1
-                </button>
             </div>
 
             <div id="step2-content" style="display: none;">
@@ -436,12 +430,6 @@
                         🎬 Seguir Canal YouTube
                     </button>
                 </a>
-                <div style="text-align: center; margin-top: 15px; color: #1e90ff;">
-                    <small>Después de seguir, haz clic en "Verificar"</small>
-                </div>
-                <button class="button button-primary" id="verify-youtube-btn" style="background: linear-gradient(45deg, #ff0000, #ff6666);">
-                    ✓ Verificar Paso 2
-                </button>
             </div>
 
             <div id="step3-content" style="display: none;">
@@ -510,16 +498,20 @@
             }
         }
 
-        document.getElementById('verify-whatsapp-btn').addEventListener('click', function() {
-            step1Completed = true;
-            saveState();
-            updateUI();
+        document.getElementById('whatsapp-btn').addEventListener('click', function() {
+            setTimeout(() => {
+                step1Completed = true;
+                saveState();
+                updateUI();
+            }, 1000);
         });
 
-        document.getElementById('verify-youtube-btn').addEventListener('click', function() {
-            step2Completed = true;
-            saveState();
-            updateUI();
+        document.getElementById('youtube-btn').addEventListener('click', function() {
+            setTimeout(() => {
+                step2Completed = true;
+                saveState();
+                updateUI();
+            }, 1000);
         });
 
         document.getElementById('generate-btn').addEventListener('click', function() {
